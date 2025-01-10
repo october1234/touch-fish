@@ -1,0 +1,13 @@
+services:
+  official-website-2:
+    container_name: touchfish
+    image: ghcr.io/october1234/touch-fish:latest
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.touchfish.rule=Host(`touchfish.octsrv.org`)"
+      - "traefik.http.routers.touchfish.entrypoints=web,websecure"
+networks:
+  web:
+    external: true
