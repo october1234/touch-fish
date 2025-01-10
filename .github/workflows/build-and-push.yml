@@ -1,0 +1,41 @@
+name: build-and-publish.yml
+
+# Change the following according to project needs
+env:
+  IMAGE_NAME: ghcr.io/${{ github.repository }}:latest
+  COMPOSE_NAME: ${{ github.event.repository.name }}
+  COMPOSE_BRANCH: main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v3
+        with:
+          push: true
+          tags: ${{ env.IMAGE_NAME }}
+          file: ./Dockerfile
+          context: .
+
+      - name: Deploy to production
+        run: |
+          curl -k -X POST \
+          -H "Content-Type: application/json" \
+          -H "Authorization: ${{ secrets.TUNA_AUTH }}" \
+          -d '{"name":"${{ env.COMPOSE_NAME }}","url":"https://raw.githubusercontent.com/${{ github.repository }}/refs/heads/${{ env.COMPOSE_BRANCH }}/docker-compose.yml"}' \
+          https://tuna.octsrv.org/deploy
